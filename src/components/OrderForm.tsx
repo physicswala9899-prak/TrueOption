@@ -23,7 +23,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   balance,
   onPlaceTrade,
   payoutPercentage = 70,
-  assetName = 'BTC/USDT',
+  assetName = 'True coin',
 }) => {
   const [amount, setAmount] = useState<number>(100);
   const [amountStr, setAmountStr] = useState<string>('100');

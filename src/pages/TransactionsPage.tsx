@@ -190,7 +190,7 @@ export default function TransactionsPage() {
                       {trade.direction === 'UP' ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white">{trade.asset}</div>
+                      <div className="text-sm font-bold text-white">True coin</div>
                       <div className="text-[10px] text-gray-500 md:hidden">{format(parseISO(trade.created_at), 'MMM dd, HH:mm')}</div>
                     </div>
                   </div>

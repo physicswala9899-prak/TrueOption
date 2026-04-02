@@ -8,9 +8,7 @@ import { History, TrendingUp, TrendingDown, AlertCircle, Clock, Wallet, Plus } f
 import { format } from 'date-fns';
 
 const ASSETS = [
-  { id: 'BTCUSDT', name: 'Bitcoin', icon: '₿' },
-  { id: 'ETHUSDT', name: 'Ethereum', icon: 'Ξ' },
-  { id: 'BNBUSDT', name: 'Binance Coin', icon: 'BNB' },
+  { id: 'BTCUSDT', name: 'True coin', icon: 'T' },
 ];
 
 export default function TradePage() {
@@ -21,6 +19,7 @@ export default function TradePage() {
   const { price, history } = usePriceFeed(asset, timeframe);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMaintenance, setIsMaintenance] = useState(false);
 
   const tradesRef = React.useRef<Trade[]>([]);
   const priceRef = React.useRef<number | null>(null);
@@ -34,6 +33,7 @@ export default function TradePage() {
   }, [price]);
 
   useEffect(() => {
+    checkMaintenance();
     fetchUser();
     fetchTrades();
 
@@ -86,9 +86,19 @@ export default function TradePage() {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) {
       const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
-      setUser(data);
+      if (data && (data as any).is_blocked) {
+        setError('Your account is blocked. Please contact support.');
+      }
+      setUser(data as any);
     }
     setLoading(false);
+  };
+
+  const checkMaintenance = async () => {
+    const { data } = await supabase.from('settings').select('value').eq('key', 'maintenance_mode').single();
+    if (data && (data as any).value === true) {
+      setIsMaintenance(true);
+    }
   };
 
   const fetchTrades = async () => {
@@ -124,6 +134,35 @@ export default function TradePage() {
     }
   };
 
+  if (isMaintenance) {
+    return (
+      <div className="min-h-screen bg-[#0b0e14] flex items-center justify-center p-6 text-center">
+        <div className="max-w-md space-y-6">
+          <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto text-amber-500">
+            <AlertCircle size={40} />
+          </div>
+          <h1 className="text-3xl font-bold text-white">Maintenance Mode</h1>
+          <p className="text-gray-400">The platform is currently undergoing maintenance. Please check back later.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0b0e14] flex items-center justify-center p-6 text-center">
+        <div className="max-w-md space-y-6">
+          <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500">
+            <AlertCircle size={40} />
+          </div>
+          <h1 className="text-3xl font-bold text-white">Access Restricted</h1>
+          <p className="text-gray-400">{error}</p>
+          <button onClick={() => supabase.auth.signOut()} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">Logout</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Layout>
       <div className="flex flex-col md:flex-row h-[calc(100vh-56px)] sm:h-[calc(100vh-64px)] bg-[#0a0a0a] overflow-hidden">
@@ -145,7 +184,7 @@ export default function TradePage() {
                   >
                     <span className="text-xs sm:text-sm font-bold">{a.icon}</span>
                     <div className="flex flex-col items-start">
-                      <span className="text-[9px] sm:text-[10px] font-bold leading-none">{a.id}</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold leading-none">{a.name}</span>
                       <span className="text-[8px] sm:text-[9px] text-emerald-400 font-bold">70%</span>
                     </div>
                   </button>
@@ -217,7 +256,7 @@ export default function TradePage() {
                           {trade.direction === 'UP' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-white">{trade.asset}</div>
+                          <div className="text-xs font-bold text-white">True coin</div>
                           <div className="text-[10px] text-gray-500">{format(new Date(trade.created_at), 'HH:mm')}</div>
                         </div>
                       </div>

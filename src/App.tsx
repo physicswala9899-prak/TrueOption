@@ -4,9 +4,19 @@ import { supabase } from './lib/supabase';
 import TradePage from './pages/TradePage';
 import AuthPage from './pages/AuthPage';
 import WalletPage from './pages/WalletPage';
-import AdminPage from './pages/AdminPage';
 import SettingsPage from './pages/SettingsPage';
 import TransactionsPage from './pages/TransactionsPage';
+
+// Admin Pages
+import { AdminGuard } from './components/AdminGuard';
+import { AdminLayout } from './components/AdminLayout';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminUsers from './pages/admin/Users';
+import AdminTrades from './pages/admin/Trades';
+import AdminTransactions from './pages/admin/Transactions';
+import AdminSettings from './pages/admin/Settings';
+import AdminReports from './pages/admin/Reports';
+import AdminLogs from './pages/admin/Logs';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -79,8 +89,58 @@ export default function App() {
         <Route path="/trade" element={session ? <TradePage /> : <Navigate to="/auth" />} />
         <Route path="/wallet" element={session ? <WalletPage /> : <Navigate to="/auth" />} />
         <Route path="/transactions" element={session ? <TransactionsPage /> : <Navigate to="/auth" />} />
-        <Route path="/admin" element={session ? <AdminPage /> : <Navigate to="/auth" />} />
         <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/auth" />} />
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminDashboard />
+            </AdminLayout>
+          </AdminGuard>
+        } />
+        <Route path="/admin/users" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminUsers />
+            </AdminLayout>
+          </AdminGuard>
+        } />
+        <Route path="/admin/trades" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminTrades />
+            </AdminLayout>
+          </AdminGuard>
+        } />
+        <Route path="/admin/transactions" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminTransactions />
+            </AdminLayout>
+          </AdminGuard>
+        } />
+        <Route path="/admin/settings" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminSettings />
+            </AdminLayout>
+          </AdminGuard>
+        } />
+        <Route path="/admin/reports" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminReports />
+            </AdminLayout>
+          </AdminGuard>
+        } />
+        <Route path="/admin/logs" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminLogs />
+            </AdminLayout>
+          </AdminGuard>
+        } />
       </Routes>
     </Router>
   );

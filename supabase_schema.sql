@@ -7,6 +7,16 @@ CREATE TABLE public.users (
   full_name TEXT,
   balance NUMERIC DEFAULT 0 CHECK (balance >= 0),
   is_admin BOOLEAN DEFAULT FALSE,
+  is_blocked BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 1.1 Admin Logs Table
+CREATE TABLE public.admin_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  admin_id UUID REFERENCES public.users(id) NOT NULL,
+  action TEXT NOT NULL,
+  details JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -50,7 +60,7 @@ CREATE TABLE public.settings (
 );
 
 -- INSERT DEFAULT SETTINGS
-INSERT INTO public.settings (key, value) VALUES ('payout_percentages', '{"BTC/USDT": 70, "ETH/USDT": 70, "BNB/USDT": 70}');
+INSERT INTO public.settings (key, value) VALUES ('payout_percentages', '{"BTCUSDT": 70}');
 
 -- 5. RLS POLICIES
 
@@ -58,6 +68,7 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trades ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_logs ENABLE ROW LEVEL SECURITY;
 
 -- Users Policies
 CREATE POLICY "Users can view own profile" ON public.users FOR SELECT USING (auth.uid() = id);
@@ -78,6 +89,12 @@ CREATE POLICY "Admins have full access to trades" ON public.trades USING (
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
 );
 CREATE POLICY "Admins have full access to transactions" ON public.transactions USING (
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
+);
+CREATE POLICY "Admins have full access to admin_logs" ON public.admin_logs USING (
+  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
+);
+CREATE POLICY "Admins have full access to settings" ON public.settings USING (
   EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
 );
 
@@ -150,8 +167,102 @@ BEGIN
   -- Record transaction
   INSERT INTO public.transactions (user_id, type, amount, status, reference)
   VALUES (p_user_id, CASE WHEN p_amount > 0 THEN 'DEPOSIT'::transaction_type ELSE 'WITHDRAWAL'::transaction_type END, ABS(p_amount), 'COMPLETED', p_reason);
+
+  -- Log action
+  INSERT INTO public.admin_logs (admin_id, action, details)
+  VALUES (auth.uid(), 'ADJUST_BALANCE', jsonb_build_object('user_id', p_user_id, 'amount', p_amount, 'reason', p_reason));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Admin Block/Unblock User
+CREATE OR REPLACE FUNCTION public.admin_set_user_blocked(
+  p_user_id UUID,
+  p_blocked BOOLEAN
+) RETURNS VOID AS $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE) THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
+  UPDATE public.users SET is_blocked = p_blocked WHERE id = p_user_id;
+
+  INSERT INTO public.admin_logs (admin_id, action, details)
+  VALUES (auth.uid(), CASE WHEN p_blocked THEN 'BLOCK_USER' ELSE 'UNBLOCK_USER' END, jsonb_build_object('user_id', p_user_id));
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Admin Manual Settlement
+CREATE OR REPLACE FUNCTION public.admin_settle_trade(
+  p_trade_id UUID,
+  p_result trade_result
+) RETURNS VOID AS $$
+DECLARE
+  v_trade RECORD;
+  v_payout NUMERIC;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE) THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
+  SELECT * INTO v_trade FROM public.trades WHERE id = p_trade_id FOR UPDATE;
+  
+  IF v_trade.result != 'PENDING' THEN
+    RAISE EXCEPTION 'Trade already settled';
+  END IF;
+
+  IF p_result = 'WIN' THEN
+    v_payout := v_trade.amount + (v_trade.amount * v_trade.payout_percentage / 100);
+    UPDATE public.users SET balance = balance + v_payout WHERE id = v_trade.user_id;
+    INSERT INTO public.transactions (user_id, type, amount, status, reference)
+    VALUES (v_trade.user_id, 'TRADE_WIN', v_payout, 'COMPLETED', v_trade.id::TEXT);
+  ELSE
+    v_payout := 0;
+  END IF;
+
+  UPDATE public.trades 
+  SET result = p_result, payout = v_payout, settled_at = NOW()
+  WHERE id = p_trade_id;
+
+  INSERT INTO public.admin_logs (admin_id, action, details)
+  VALUES (auth.uid(), 'SETTLE_TRADE', jsonb_build_object('trade_id', p_trade_id, 'result', p_result));
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Admin Withdrawal Management
+CREATE OR REPLACE FUNCTION public.admin_handle_withdrawal(
+  p_transaction_id UUID,
+  p_status transaction_status
+) RETURNS VOID AS $$
+DECLARE
+  v_transaction RECORD;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE) THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
+  SELECT * INTO v_transaction FROM public.transactions WHERE id = p_transaction_id FOR UPDATE;
+  
+  IF v_transaction.type != 'WITHDRAWAL' OR v_transaction.status != 'PENDING' THEN
+    RAISE EXCEPTION 'Invalid transaction';
+  END IF;
+
+  IF p_status = 'COMPLETED' THEN
+    -- Balance was already deducted when withdrawal was requested (assuming standard flow)
+    -- If not, deduct here. Let's assume it was deducted on request.
+    UPDATE public.transactions SET status = 'COMPLETED' WHERE id = p_transaction_id;
+  ELSIF p_status = 'FAILED' THEN
+    -- Refund balance
+    UPDATE public.users SET balance = balance + v_transaction.amount WHERE id = v_transaction.user_id;
+    UPDATE public.transactions SET status = 'FAILED' WHERE id = p_transaction_id;
+  END IF;
+
+  INSERT INTO public.admin_logs (admin_id, action, details)
+  VALUES (auth.uid(), 'HANDLE_WITHDRAWAL', jsonb_build_object('transaction_id', p_transaction_id, 'status', p_status));
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 7. INITIAL ADMIN SETUP (Run this after the user signs up)
+-- UPDATE public.users SET is_admin = TRUE WHERE email = 'riddhaanleo@gmail.com';
 
 -- Trade Settlement Logic
 CREATE OR REPLACE FUNCTION public.settle_trades(p_asset TEXT, p_current_price NUMERIC)

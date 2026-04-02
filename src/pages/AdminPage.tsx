@@ -200,7 +200,7 @@ export default function AdminPage() {
                 {trades.map(trade => (
                   <tr key={trade.id} className="text-sm hover:bg-white/5">
                     <td className="px-6 py-4 text-zinc-500">{trade.user_id.slice(0, 8)}</td>
-                    <td className="px-6 py-4 text-white font-medium">{trade.asset}</td>
+                    <td className="px-6 py-4 text-white font-medium">True coin</td>
                     <td className="px-6 py-4 text-zinc-300">${trade.amount}</td>
                     <td className={`px-6 py-4 font-bold ${trade.direction === 'UP' ? 'text-emerald-400' : 'text-rose-400'}`}>{trade.direction}</td>
                     <td className="px-6 py-4">
