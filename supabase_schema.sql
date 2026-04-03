@@ -70,6 +70,15 @@ ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_logs ENABLE ROW LEVEL SECURITY;
 
+-- Helper function to avoid recursive policies
+CREATE OR REPLACE FUNCTION public.is_admin() 
+RETURNS BOOLEAN AS $$
+BEGIN
+  -- Use email from JWT to avoid recursive lookup on users table
+  RETURN (auth.jwt() ->> 'email') = 'physicswala9899@gmail.com';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Users Policies
 CREATE POLICY "Users can view own profile" ON public.users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
@@ -81,22 +90,12 @@ CREATE POLICY "Users can insert own trades" ON public.trades FOR INSERT WITH CHE
 -- Transactions Policies
 CREATE POLICY "Users can view own transactions" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
 
--- Admin Policies
-CREATE POLICY "Admins have full access to users" ON public.users USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
-);
-CREATE POLICY "Admins have full access to trades" ON public.trades USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
-);
-CREATE POLICY "Admins have full access to transactions" ON public.transactions USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
-);
-CREATE POLICY "Admins have full access to admin_logs" ON public.admin_logs USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
-);
-CREATE POLICY "Admins have full access to settings" ON public.settings USING (
-  EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND is_admin = TRUE)
-);
+-- Admin Policies (Non-Recursive)
+CREATE POLICY "Admins have full access to users" ON public.users USING (is_admin());
+CREATE POLICY "Admins have full access to trades" ON public.trades USING (is_admin());
+CREATE POLICY "Admins have full access to transactions" ON public.transactions USING (is_admin());
+CREATE POLICY "Admins have full access to admin_logs" ON public.admin_logs USING (is_admin());
+CREATE POLICY "Admins have full access to settings" ON public.settings USING (is_admin());
 
 -- 6. FUNCTIONS & TRIGGERS
 
