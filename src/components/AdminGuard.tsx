@@ -27,10 +27,13 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
         .eq('id', user.id)
         .single();
 
+      // Fallback: Check email directly if database check fails or returns false
+      const isAdminEmail = user.email === 'physicswala9899@gmail.com';
+
       if (error) {
         console.error('Admin check error:', error);
-        setIsAdmin(false);
-      } else if (!(data as any)?.is_admin) {
+        setIsAdmin(isAdminEmail);
+      } else if (!(data as any)?.is_admin && !isAdminEmail) {
         console.warn('User is not an admin in the database');
         setIsAdmin(false);
       } else {
