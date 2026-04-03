@@ -27,9 +27,14 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
         .eq('id', user.id)
         .single();
 
-      if (error || !(data as any)?.is_admin) {
+      if (error) {
+        console.error('Admin check error:', error);
+        setIsAdmin(false);
+      } else if (!(data as any)?.is_admin) {
+        console.warn('User is not an admin in the database');
         setIsAdmin(false);
       } else {
+        console.log('Admin access granted');
         setIsAdmin(true);
       }
       setLoading(false);
