@@ -143,6 +143,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { icon: TrendingUp, label: 'Trade', path: '/trade' },
     { icon: Wallet, label: 'Wallet', path: '/wallet' },
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    { icon: Trophy, label: 'Refer & Earn', path: '/refer' },
     ...(user?.is_admin ? [{ icon: ShieldCheck, label: 'Admin', path: '/admin' }] : []),
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];

@@ -110,7 +110,7 @@ export default function TradePage() {
     if (data) setTrades(data);
   };
 
-  const handlePlaceTrade = async (direction: 'UP' | 'DOWN', amount: number, expiryMinutes: number) => {
+  const handlePlaceTrade = async (direction: 'UP' | 'DOWN', amount: number, expiryMinutes: number, useBonus: boolean) => {
     if (!price || !user) return;
 
     const expiryTime = new Date(Date.now() + expiryMinutes * 60000).toISOString();
@@ -121,7 +121,8 @@ export default function TradePage() {
         p_amount: amount,
         p_direction: direction,
         p_entry_price: price,
-        p_expiry_time: expiryTime
+        p_expiry_time: expiryTime,
+        p_use_bonus: useBonus
       });
 
       if (error) throw error;
@@ -226,6 +227,7 @@ export default function TradePage() {
             <OrderForm 
               currentPrice={price} 
               balance={user?.balance || 0} 
+              bonusBalance={user?.bonus_balance || 0}
               onPlaceTrade={handlePlaceTrade} 
               assetName={ASSETS.find(a => a.id === asset)?.name}
             />

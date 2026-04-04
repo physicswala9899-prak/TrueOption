@@ -6,6 +6,7 @@ import AuthPage from './pages/AuthPage';
 import WalletPage from './pages/WalletPage';
 import SettingsPage from './pages/SettingsPage';
 import TransactionsPage from './pages/TransactionsPage';
+import ReferEarnPage from './pages/ReferEarnPage';
 
 // Admin Pages
 import { AdminGuard } from './components/AdminGuard';
@@ -17,6 +18,7 @@ import AdminTransactions from './pages/admin/Transactions';
 import AdminSettings from './pages/admin/Settings';
 import AdminReports from './pages/admin/Reports';
 import AdminLogs from './pages/admin/Logs';
+import AdminReferrals from './pages/admin/Referrals';
 
 export default function App() {
   const [session, setSession] = useState<any>(null);
@@ -88,6 +90,7 @@ export default function App() {
         <Route path="/" element={session ? <TradePage /> : <Navigate to="/auth" />} />
         <Route path="/trade" element={session ? <TradePage /> : <Navigate to="/auth" />} />
         <Route path="/wallet" element={session ? <WalletPage /> : <Navigate to="/auth" />} />
+        <Route path="/refer" element={session ? <ReferEarnPage /> : <Navigate to="/auth" />} />
         <Route path="/transactions" element={session ? <TransactionsPage /> : <Navigate to="/auth" />} />
         <Route path="/settings" element={session ? <SettingsPage /> : <Navigate to="/auth" />} />
 
@@ -131,6 +134,13 @@ export default function App() {
           <AdminGuard>
             <AdminLayout>
               <AdminReports />
+            </AdminLayout>
+          </AdminGuard>
+        } />
+        <Route path="/admin/referrals" element={
+          <AdminGuard>
+            <AdminLayout>
+              <AdminReferrals />
             </AdminLayout>
           </AdminGuard>
         } />

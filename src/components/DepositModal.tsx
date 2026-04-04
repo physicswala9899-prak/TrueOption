@@ -311,11 +311,11 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                     <span className="text-gray-500 text-sm font-medium">(8)</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                    <MethodCard onClick={() => setSelectedMethod({name: 'UPI', icon: UpiIcon, min: '900.00'})} icon={UpiIcon} name="UPI" min="900.00" />
+                    <MethodCard onClick={() => setSelectedMethod({name: 'UPI', icon: UpiIcon, min: '500.00'})} icon={UpiIcon} name="UPI" min="500.00" />
                     <MethodCard onClick={() => setSelectedMethod({name: 'Binance Pay', icon: BinanceIcon, min: '970.00'})} icon={BinanceIcon} name="Binance Pay" min="970.00" />
-                    <MethodCard onClick={() => setSelectedMethod({name: 'PhonePe', icon: PhonePeIcon, min: '900.00'})} icon={PhonePeIcon} name="PhonePe" min="900.00" />
+                    <MethodCard onClick={() => setSelectedMethod({name: 'PhonePe', icon: PhonePeIcon, min: '500.00'})} icon={PhonePeIcon} name="PhonePe" min="500.00" />
                     <MethodCard onClick={() => setSelectedMethod({name: 'USDT (BEP-20)', icon: UsdtIcon, min: '970.00'})} icon={UsdtIcon} network="BEP-20" name="USDT (BEP-20)" min="970.00" />
-                    <MethodCard onClick={() => setSelectedMethod({name: 'PayTM', icon: PaytmIcon, min: '900.00'})} icon={PaytmIcon} name="PayTM" min="900.00" />
+                    <MethodCard onClick={() => setSelectedMethod({name: 'PayTM', icon: PaytmIcon, min: '500.00'})} icon={PaytmIcon} name="PayTM" min="500.00" />
                     <MethodCard onClick={() => setSelectedMethod({name: 'USDT (TRC-20)', icon: UsdtIcon, min: '970.00'})} icon={UsdtIcon} network="TRC-20" name="USDT (TRC-20)" min="970.00" />
                     <MethodCard onClick={() => setSelectedMethod({name: 'USDT (ERC-20)', icon: UsdtIcon, min: '970.00'})} icon={UsdtIcon} network="ERC-20" name="USDT (ERC-20)" min="970.00" />
                     <MethodCard onClick={() => setSelectedMethod({name: 'USDT (Polygon)', icon: UsdtIcon, min: '970.00'})} icon={UsdtIcon} network="Polygon" name="USDT (Polygon)" min="970.00" />
@@ -329,9 +329,9 @@ export const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) =
                     <span className="text-gray-500 text-sm font-medium">(3)</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                    <MethodCard onClick={() => setSelectedMethod({name: 'UPI', icon: UpiIcon, min: '900.00'})} icon={UpiIcon} name="UPI" min="900.00" />
-                    <MethodCard onClick={() => setSelectedMethod({name: 'PayTM', icon: PaytmIcon, min: '900.00'})} icon={PaytmIcon} name="PayTM" min="900.00" />
-                    <MethodCard onClick={() => setSelectedMethod({name: 'PhonePe', icon: PhonePeIcon, min: '900.00'})} icon={PhonePeIcon} name="PhonePe" min="900.00" />
+                    <MethodCard onClick={() => setSelectedMethod({name: 'UPI', icon: UpiIcon, min: '500.00'})} icon={UpiIcon} name="UPI" min="500.00" />
+                    <MethodCard onClick={() => setSelectedMethod({name: 'PayTM', icon: PaytmIcon, min: '500.00'})} icon={PaytmIcon} name="PayTM" min="500.00" />
+                    <MethodCard onClick={() => setSelectedMethod({name: 'PhonePe', icon: PhonePeIcon, min: '500.00'})} icon={PhonePeIcon} name="PhonePe" min="500.00" />
                   </div>
                 </div>
 

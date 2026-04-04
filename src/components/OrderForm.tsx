@@ -13,7 +13,8 @@ import { motion } from 'motion/react';
 interface OrderFormProps {
   currentPrice: number | null;
   balance: number;
-  onPlaceTrade: (direction: 'UP' | 'DOWN', amount: number, expiry: number) => void;
+  bonusBalance?: number;
+  onPlaceTrade: (direction: 'UP' | 'DOWN', amount: number, expiry: number, useBonus: boolean) => void;
   payoutPercentage?: number;
   assetName?: string;
 }
@@ -21,6 +22,7 @@ interface OrderFormProps {
 export const OrderForm: React.FC<OrderFormProps> = ({
   currentPrice,
   balance,
+  bonusBalance = 0,
   onPlaceTrade,
   payoutPercentage = 70,
   assetName = 'True coin',
@@ -30,6 +32,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [minutesStr, setMinutesStr] = useState<string>('01');
   const [secondsStr, setSecondsStr] = useState<string>('00');
   const [isPending, setIsPending] = useState(false);
+  const [useBonus, setUseBonus] = useState(false);
 
   const minutes = parseInt(minutesStr) || 0;
   const seconds = parseInt(secondsStr) || 0;
@@ -157,8 +160,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
   const handlePlaceTradeClick = (direction: 'UP' | 'DOWN') => {
     const expiryMinutes = minutes + seconds / 60;
-    onPlaceTrade(direction, amount, expiryMinutes);
+    onPlaceTrade(direction, amount, expiryMinutes, useBonus);
   };
+
+  const activeBalance = useBonus ? bonusBalance : balance;
 
   return (
     <div className="flex flex-col gap-3 sm:gap-6">
@@ -287,6 +292,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
         {/* Payout Info */}
         <div className="flex flex-col gap-0.5 sm:gap-1 px-1">
+          {bonusBalance > 0 && (
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] sm:text-xs text-gray-400 font-bold uppercase tracking-wider">Use Bonus Balance:</span>
+              <button 
+                onClick={() => setUseBonus(!useBonus)}
+                className={`w-8 h-4 rounded-full transition-colors relative ${useBonus ? 'bg-blue-600' : 'bg-white/10'}`}
+              >
+                <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${useBonus ? 'left-4' : 'left-0.5'}`} />
+              </button>
+            </div>
+          )}
           <div className="flex justify-between items-center">
             <span className="text-[9px] sm:text-[11px] text-gray-500 font-bold uppercase tracking-wider">Your payout:</span>
             <span className="text-xs sm:text-sm font-bold text-emerald-400">₹{potentialPayout.toFixed(2)}</span>
@@ -303,7 +319,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             onClick={() => handlePlaceTradeClick('UP')}
-            disabled={!currentPrice || amount > balance}
+            disabled={!currentPrice || amount > activeBalance}
             className="flex-1 sm:w-full h-12 sm:h-20 bg-[#00b97a] hover:bg-[#00d18a] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg sm:rounded-2xl text-white font-bold flex items-center justify-between px-4 sm:px-8 transition-all shadow-lg group"
           >
             <span className="text-base sm:text-3xl font-bold tracking-tight">Up</span>
@@ -316,7 +332,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             onClick={() => handlePlaceTradeClick('DOWN')}
-            disabled={!currentPrice || amount > balance}
+            disabled={!currentPrice || amount > activeBalance}
             className="flex-1 sm:w-full h-12 sm:h-20 bg-[#f6465d] hover:bg-[#ff5a72] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg sm:rounded-2xl text-white font-bold flex items-center justify-between px-4 sm:px-8 transition-all shadow-lg group"
           >
             <span className="text-base sm:text-3xl font-bold tracking-tight">Down</span>

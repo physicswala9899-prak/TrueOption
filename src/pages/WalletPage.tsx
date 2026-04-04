@@ -62,7 +62,9 @@ export default function WalletPage() {
   };
 
   const balance = user?.balance || 0;
+  const bonusBalance = user?.bonus_balance || 0;
   const formattedBalance = balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formattedBonus = bonusBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const faqs = [
     "How to withdraw money from the account?",
@@ -142,6 +144,12 @@ export default function WalletPage() {
                 <div>
                   <div className="text-sm text-gray-500 mb-1">In the account:</div>
                   <div className="text-2xl font-bold text-white">{formattedBalance} ₹</div>
+                </div>
+                <div className="h-px bg-gray-700/50 w-full my-4"></div>
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Bonus Balance:</div>
+                  <div className="text-2xl font-bold text-emerald-400">{formattedBonus} ₹</div>
+                  <div className="text-xs text-gray-500 mt-1">Non-withdrawable. Can be used for trading.</div>
                 </div>
                 <div className="h-px bg-gray-700/50 w-full my-4"></div>
                 <div>
@@ -295,11 +303,11 @@ export default function WalletPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-[#00b96b]" />
-                <span className="text-sm text-gray-400">Minimum deposit amount: <span className="text-[#00b96b]">₹900</span></span>
+                <span className="text-sm text-gray-400">Minimum deposit amount: <span className="text-[#00b96b]">₹500</span></span>
               </div>
               <div className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-[#00b96b]" />
-                <span className="text-sm text-gray-400">Minimum withdrawal amount: <span className="text-[#00b96b]">₹900</span></span>
+                <span className="text-sm text-gray-400">Minimum withdrawal amount: <span className="text-[#00b96b]">₹500</span></span>
               </div>
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#00b96b]" />

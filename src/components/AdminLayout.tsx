@@ -31,6 +31,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Transactions', path: '/admin/transactions', icon: History },
     { name: 'Settings', path: '/admin/settings', icon: Settings },
     { name: 'Reports', path: '/admin/reports', icon: FileText },
+    { name: 'Referrals', path: '/admin/referrals', icon: Users },
     { name: 'Admin Logs', path: '/admin/logs', icon: ShieldAlert },
   ];
 

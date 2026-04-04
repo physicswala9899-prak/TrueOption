@@ -38,6 +38,12 @@ export interface UserProfile {
   full_name: string;
   balance: number;
   email?: string;
+  phone?: string;
+  invite_code?: string;
+  referral_code?: string;
+  referred_by?: string;
+  bonus_balance?: number;
+  referral_bonus_received?: boolean;
   is_admin: boolean;
   created_at: string;
 }

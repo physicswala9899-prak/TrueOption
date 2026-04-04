@@ -26,6 +26,7 @@ export default function AdminUsers() {
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [adjustAmount, setAdjustAmount] = useState('');
   const [adjustReason, setAdjustReason] = useState('');
+  const [adjustType, setAdjustType] = useState<'MAIN' | 'BONUS'>('MAIN');
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Pagination
@@ -63,7 +64,8 @@ export default function AdminUsers() {
     if (!selectedUser || !adjustAmount || !adjustReason) return;
     setIsProcessing(true);
     try {
-      const { error } = await (supabase.rpc as any)('adjust_user_balance', {
+      const functionName = adjustType === 'MAIN' ? 'adjust_user_balance' : 'adjust_user_bonus_balance';
+      const { error } = await (supabase.rpc as any)(functionName, {
         p_user_id: selectedUser.id,
         p_amount: Number(adjustAmount),
         p_reason: adjustReason
@@ -256,10 +258,22 @@ export default function AdminUsers() {
                   <div className="text-lg font-bold text-white">₹{selectedUser.balance?.toLocaleString()}</div>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Bonus Balance</div>
+                  <div className="text-lg font-bold text-emerald-400">₹{selectedUser.bonus_balance?.toLocaleString() || '0'}</div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                   <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Status</div>
                   <div className={`text-sm font-bold ${selectedUser.is_blocked ? 'text-rose-500' : 'text-emerald-500'}`}>
                     {selectedUser.is_blocked ? 'Blocked' : 'Active'}
                   </div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Phone</div>
+                  <div className="text-sm font-bold text-white">{selectedUser.phone || 'N/A'}</div>
+                </div>
+                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <div className="text-[10px] text-gray-500 uppercase font-bold mb-1">Referral Code</div>
+                  <div className="text-sm font-bold text-blue-400">{selectedUser.referral_code || 'None'}</div>
                 </div>
               </div>
 
@@ -328,6 +342,28 @@ export default function AdminUsers() {
             </div>
 
             <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Balance Type</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAdjustType('MAIN')}
+                    className={`flex-1 py-2 rounded-lg font-bold text-sm transition-colors ${
+                      adjustType === 'MAIN' ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    Main Balance
+                  </button>
+                  <button
+                    onClick={() => setAdjustType('BONUS')}
+                    className={`flex-1 py-2 rounded-lg font-bold text-sm transition-colors ${
+                      adjustType === 'BONUS' ? 'bg-emerald-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    Bonus Balance
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Amount (Negative to deduct)</label>
                 <div className="relative">
