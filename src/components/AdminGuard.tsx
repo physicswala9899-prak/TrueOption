@@ -13,34 +13,48 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.error('Auth error in AdminGuard:', authError);
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('users')
+          .select('is_admin, email')
+          .eq('id', user.id)
+          .single();
+
+        console.log('Admin check for user:', user.id, 'Data:', data, 'Error:', error);
+
+        // Fallback: Check email directly if database check fails or returns false
+        const isAdminEmail = user.email === 'physicswala9899@gmail.com' || data?.email === 'physicswala9899@gmail.com';
+
+        if (error) {
+          console.error('Admin check error:', error);
+          // If we got an error (e.g. row not found), but the email matches the superadmin, let them in
+          if (isAdminEmail) {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
+        } else if (data?.is_admin === true || isAdminEmail) {
+          console.log('Admin access granted');
+          setIsAdmin(true);
+        } else {
+          console.warn('User is not an admin in the database');
+          setIsAdmin(false);
+        }
+      } catch (err: any) {
+        console.error('Unexpected error in AdminGuard:', err);
         setIsAdmin(false);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const { data, error } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single();
-
-      // Fallback: Check email directly if database check fails or returns false
-      const isAdminEmail = user.email === 'physicswala9899@gmail.com';
-
-      if (error) {
-        console.error('Admin check error:', error);
-        setIsAdmin(isAdminEmail);
-      } else if (!(data as any)?.is_admin && !isAdminEmail) {
-        console.warn('User is not an admin in the database');
-        setIsAdmin(false);
-      } else {
-        console.log('Admin access granted');
-        setIsAdmin(true);
-      }
-      setLoading(false);
     };
 
     checkAdmin();
