@@ -35,6 +35,23 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
+
+    // Set up Realtime subscription for users table
+    const channel = supabase
+      .channel('admin_users_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        (payload) => {
+          console.log('Realtime update received:', payload);
+          fetchUsers(); // Refetch to keep pagination/sorting intact
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [page, searchTerm]);
 
   const fetchUsers = async () => {
