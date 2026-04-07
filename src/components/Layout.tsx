@@ -48,27 +48,39 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     let profileSubscription: any;
 
     const setupAuth = async () => {
-      const { data: { user: currentAuthUser } } = await supabase.auth.getUser();
-      if (currentAuthUser) {
-        setAuthUser(currentAuthUser);
-        fetchUser(currentAuthUser);
+      try {
+        const { data: { user: currentAuthUser }, error } = await supabase.auth.getUser();
         
-        // Subscribe to profile changes
-        profileSubscription = supabase
-          .channel('profile-changes')
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'users',
-              filter: `id=eq.${currentAuthUser.id}`
-            },
-            (payload) => {
-              setUser({ ...(payload.new as UserProfile), email: currentAuthUser.email });
-            }
-          )
-          .subscribe();
+        if (error) {
+          console.error("Layout auth error:", error.message);
+          if (error.message.includes('Refresh Token')) {
+            await supabase.auth.signOut().catch(console.error);
+          }
+        }
+
+        if (currentAuthUser) {
+          setAuthUser(currentAuthUser);
+          fetchUser(currentAuthUser);
+          
+          // Subscribe to profile changes
+          profileSubscription = supabase
+            .channel('profile-changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'users',
+                filter: `id=eq.${currentAuthUser.id}`
+              },
+              (payload) => {
+                setUser({ ...(payload.new as UserProfile), email: currentAuthUser.email });
+              }
+            )
+            .subscribe();
+        }
+      } catch (err) {
+        console.error("Unexpected error in setupAuth:", err);
       }
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

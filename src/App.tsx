@@ -26,15 +26,30 @@ export default function App() {
 
   useEffect(() => {
     // Get initial session quickly
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error("Auth session error:", error.message);
+        if (error.message.includes('Refresh Token')) {
+          // Force sign out to clear invalid tokens
+          supabase.auth.signOut().catch(console.error);
+        }
+      }
       setSession(session);
+      setLoading(false);
+    }).catch((err) => {
+      console.error("Unexpected auth error:", err);
       setLoading(false);
     });
 
     // Listen for auth changes to redirect immediately
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+      } else {
+        setSession(session);
+      }
+      
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
         setLoading(false);
       }
     });

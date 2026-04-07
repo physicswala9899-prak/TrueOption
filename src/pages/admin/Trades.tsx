@@ -35,6 +35,17 @@ export default function AdminTrades() {
 
   useEffect(() => {
     fetchTrades();
+
+    const tradeSubscription = supabase
+      .channel('admin-trades-channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trades' }, () => {
+        fetchTrades();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tradeSubscription);
+    };
   }, [page, searchTerm, statusFilter]);
 
   const fetchTrades = async () => {
@@ -96,7 +107,7 @@ export default function AdminTrades() {
         <div className="p-4 bg-rose-500/10 text-rose-500 rounded-xl max-w-lg text-center">
           <h3 className="font-bold mb-2">Error Loading Trades</h3>
           <p className="text-sm">{errorMsg}</p>
-          <p className="text-xs mt-4 text-rose-400">Please make sure you have run the final_fix.sql script in your Supabase SQL Editor.</p>
+          <p className="text-xs mt-4 text-rose-400">Please make sure you have run the latest SQL scripts in your Supabase SQL Editor.</p>
         </div>
         <button onClick={fetchTrades} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">
           Retry
