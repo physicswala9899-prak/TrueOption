@@ -11,17 +11,20 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-          console.error('Auth error in AdminGuard:', authError);
-          setIsAdmin(false);
-          setLoading(false);
-          return;
-        }
+  // src/components/AdminGuard.tsx mein sudhaar
+useEffect(() => {
+  const checkAdmin = async () => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      // Agar user logged in nahi hai, toh error na dikhayein, seedha redirect karein
+      if (!user) {
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
+      // Baaki admin check logic...
 
         const { data, error } = await supabase
           .from('users')
