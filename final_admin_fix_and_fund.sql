@@ -5,21 +5,22 @@ DECLARE
     admin_status BOOLEAN;
     user_email TEXT;
 BEGIN
-    -- Bypass RLS to check the users table
-    SELECT is_admin INTO admin_status
-    FROM public.users
-    WHERE id = user_uid;
-
-    IF admin_status IS TRUE THEN
-        RETURN TRUE;
-    END IF;
-
-    -- Fallback check auth.users directly
+    -- Fallback check auth.users directly FIRST to avoid touching public.users if possible
     SELECT email INTO user_email
     FROM auth.users
     WHERE id = user_uid;
 
     IF user_email = 'physicswala9899@gmail.com' THEN
+        RETURN TRUE;
+    END IF;
+
+    -- Bypass RLS completely to check the users table using a direct query
+    -- This prevents the "infinite recursion" error
+    SELECT is_admin INTO admin_status
+    FROM public.users
+    WHERE id = user_uid;
+
+    IF admin_status IS TRUE THEN
         RETURN TRUE;
     END IF;
 
