@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 export default function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
@@ -56,6 +57,7 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       let query = supabase
         .from('users')
@@ -70,8 +72,9 @@ export default function AdminUsers() {
       const { data, error } = await query;
       if (error) throw error;
       setUsers(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching users:', err);
+      setErrorMsg(err.message || 'An error occurred while fetching users.');
     } finally {
       setLoading(false);
     }
@@ -126,6 +129,21 @@ export default function AdminUsers() {
       alert(`Error: ${err.message}`);
     }
   };
+
+  if (errorMsg) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4 py-12">
+        <div className="p-4 bg-rose-500/10 text-rose-500 rounded-xl max-w-lg text-center">
+          <h3 className="font-bold mb-2">Error Loading Users</h3>
+          <p className="text-sm">{errorMsg}</p>
+          <p className="text-xs mt-4 text-rose-400">Please make sure you have run the final_fix.sql script in your Supabase SQL Editor.</p>
+        </div>
+        <button onClick={fetchUsers} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

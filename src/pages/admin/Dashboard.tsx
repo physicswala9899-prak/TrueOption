@@ -47,6 +47,7 @@ export default function AdminDashboard() {
   const [recentTrades, setRecentTrades] = useState<any[]>([]);
   const [pendingWithdrawals, setPendingWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -54,6 +55,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       // 1. Total Users
       const { count: userCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
@@ -132,8 +134,9 @@ export default function AdminDashboard() {
         .limit(5);
       setPendingWithdrawals(pending || []);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching dashboard data:', err);
+      setErrorMsg(err.message || 'An error occurred while fetching data.');
     } finally {
       setLoading(false);
     }
@@ -143,6 +146,21 @@ export default function AdminDashboard() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4">
+        <div className="p-4 bg-rose-500/10 text-rose-500 rounded-xl max-w-lg text-center">
+          <h3 className="font-bold mb-2">Error Loading Dashboard</h3>
+          <p className="text-sm">{errorMsg}</p>
+          <p className="text-xs mt-4 text-rose-400">Please make sure you have run the final_fix.sql script in your Supabase SQL Editor.</p>
+        </div>
+        <button onClick={fetchDashboardData} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">
+          Retry
+        </button>
       </div>
     );
   }

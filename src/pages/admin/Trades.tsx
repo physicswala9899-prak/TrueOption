@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 export default function AdminTrades() {
   const [trades, setTrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedTrade, setSelectedTrade] = useState<any>(null);
@@ -38,6 +39,7 @@ export default function AdminTrades() {
 
   const fetchTrades = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       let query = supabase
         .from('trades')
@@ -58,8 +60,9 @@ export default function AdminTrades() {
       const { data, error } = await query;
       if (error) throw error;
       setTrades(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching trades:', err);
+      setErrorMsg(err.message || 'An error occurred while fetching trades.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +89,21 @@ export default function AdminTrades() {
       setIsProcessing(false);
     }
   };
+
+  if (errorMsg) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4 py-12">
+        <div className="p-4 bg-rose-500/10 text-rose-500 rounded-xl max-w-lg text-center">
+          <h3 className="font-bold mb-2">Error Loading Trades</h3>
+          <p className="text-sm">{errorMsg}</p>
+          <p className="text-xs mt-4 text-rose-400">Please make sure you have run the final_fix.sql script in your Supabase SQL Editor.</p>
+        </div>
+        <button onClick={fetchTrades} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
