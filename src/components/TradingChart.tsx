@@ -33,6 +33,7 @@ import { calculateSMA, calculateBollingerBands, calculateRSI, calculateMACD } fr
 interface TradingChartProps {
   data: any[];
   asset: string;
+  trades?: any[];
   onTimeframeChange?: (timeframe: string) => void;
 }
 
@@ -89,7 +90,7 @@ const calculateHeikenAshi = (data: any[]) => {
   return haData;
 };
 
-export const TradingChart: React.FC<TradingChartProps> = ({ data, asset, onTimeframeChange }) => {
+export const TradingChart: React.FC<TradingChartProps> = ({ data, asset, trades = [], onTimeframeChange }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const mainSeriesRef = useRef<ISeriesApi<any> | null>(null);
@@ -111,6 +112,27 @@ export const TradingChart: React.FC<TradingChartProps> = ({ data, asset, onTimef
   const [showSMA, setShowSMA] = useState(true);
   const priceLinesRef = useRef<any[]>([]);
   const lastFittedAssetRef = useRef<string | null>(null);
+
+  // Update markers when trades change
+  useEffect(() => {
+    if (trades.length === 0) {
+      setMarkers([]);
+      return;
+    }
+
+    const tradeMarkers = trades.map(trade => {
+      const tradeTime = Math.floor(new Date(trade.created_at).getTime() / 1000);
+      return {
+        time: tradeTime,
+        position: trade.direction === 'UP' ? 'belowBar' : 'aboveBar',
+        color: trade.direction === 'UP' ? '#26a69a' : '#ef5350',
+        shape: trade.direction === 'UP' ? 'arrowUp' : 'arrowDown',
+        text: `${trade.direction} $${trade.amount}`,
+      };
+    });
+
+    setMarkers(tradeMarkers);
+  }, [trades]);
 
   // 1. Initialize Chart
   useEffect(() => {

@@ -27,6 +27,21 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchData();
+
+    const tradeSubscription = supabase
+      .channel('transactions-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'trades' 
+      }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tradeSubscription);
+    };
   }, []);
 
   const fetchData = async () => {
@@ -210,8 +225,13 @@ export default function TransactionsPage() {
 
                   {/* Entry Price */}
                   <div className="flex justify-between w-full md:w-auto md:block">
-                    <span className="text-xs text-gray-500 md:hidden">Entry:</span>
-                    <span className="text-sm font-mono text-gray-400">${trade.entry_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <span className="text-xs text-gray-500 md:hidden">Price:</span>
+                    <div className="flex flex-col md:items-start">
+                      <span className="text-sm font-mono text-gray-400">Entry: ${trade.entry_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                      {trade.exit_price && (
+                        <span className="text-[10px] font-mono text-blue-400">Exit: ${trade.exit_price.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Time */}

@@ -38,8 +38,13 @@ export default function TradePage() {
     fetchTrades();
 
     const tradeSubscription = supabase
-      .channel('trades-channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trades' }, () => {
+      .channel('trades-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'trades',
+        filter: user ? `user_id=eq.${user.id}` : undefined
+      }, () => {
         fetchTrades();
         fetchUser();
       })
@@ -47,19 +52,19 @@ export default function TradePage() {
 
     const settlementInterval = setInterval(() => {
       checkAndSettleTrades();
-    }, 1000);
+    }, 2000); // Check every 2 seconds
 
     return () => {
       supabase.removeChannel(tradeSubscription);
       clearInterval(settlementInterval);
     };
-  }, []);
+  }, [user?.id]);
 
   const checkAndSettleTrades = async () => {
     const currentPrice = priceRef.current;
     const currentTrades = tradesRef.current;
     
-    if (!currentPrice) return;
+    if (!currentPrice || currentTrades.length === 0) return;
     
     const now = new Date();
     const pendingTrades = currentTrades.filter(t => t.result === 'PENDING');
@@ -68,13 +73,19 @@ export default function TradePage() {
       const expiryDate = new Date(trade.expiry_time);
       if (expiryDate <= now) {
         try {
-          await (supabase.rpc as any)('settle_trade', {
+          // Call the RPC to settle the trade
+          const { error } = await (supabase.rpc as any)('settle_trade', {
             p_trade_id: trade.id,
             p_exit_price: currentPrice
           });
           
-          fetchTrades();
-          fetchUser();
+          if (error) {
+            console.error('Settlement RPC error:', error);
+          } else {
+            // Refresh data after successful settlement
+            fetchTrades();
+            fetchUser();
+          }
         } catch (err) {
           console.error('Settlement failed for trade:', trade.id, err);
         }
@@ -106,7 +117,7 @@ export default function TradePage() {
       .from('trades')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(20);
     if (data) setTrades(data);
   };
 
@@ -210,6 +221,7 @@ export default function TradePage() {
             <TradingChart 
               data={history} 
               asset={asset} 
+              trades={trades}
               onTimeframeChange={setTimeframe}
             />
           </div>
@@ -263,10 +275,13 @@ export default function TradePage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs font-bold text-white">${trade.amount}</div>
+                        <div className="text-xs font-bold text-white">₹{trade.amount}</div>
                         <div className={`text-[10px] font-bold ${trade.result === 'WIN' ? 'text-green-500' : trade.result === 'LOSS' ? 'text-red-500' : 'text-yellow-500'}`}>
                           {trade.result || 'PENDING'}
                         </div>
+                        {trade.exit_price && (
+                          <div className="text-[9px] text-gray-500 font-mono">${trade.exit_price}</div>
+                        )}
                       </div>
                     </div>
                   ))

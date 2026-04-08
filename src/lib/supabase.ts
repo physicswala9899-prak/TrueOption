@@ -55,9 +55,11 @@ export interface Trade {
   amount: number;
   direction: TradeDirection;
   entry_price: number;
+  exit_price?: number;
   expiry_time: string;
   payout_percentage: number;
   result: TradeResult;
+  force_result?: TradeResult;
   payout: number;
   created_at: string;
   settled_at?: string;

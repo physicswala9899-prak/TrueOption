@@ -26,7 +26,9 @@ export default function AdminTrades() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedTrade, setSelectedTrade] = useState<any>(null);
   const [isSettleModalOpen, setIsSettleModalOpen] = useState(false);
+  const [isForceModalOpen, setIsForceModalOpen] = useState(false);
   const [settleResult, setSettleResult] = useState<'WIN' | 'LOSS'>('WIN');
+  const [forceResult, setForceResult] = useState<'WIN' | 'LOSS' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Pagination
@@ -92,6 +94,28 @@ export default function AdminTrades() {
       
       alert(`Trade settled as ${settleResult} successfully`);
       setIsSettleModalOpen(false);
+      fetchTrades();
+      setSelectedTrade(null);
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSetForceResult = async () => {
+    if (!selectedTrade) return;
+    setIsProcessing(true);
+    try {
+      const { error } = await (supabase.rpc as any)('set_trade_force_result', {
+        p_trade_id: selectedTrade.id,
+        p_force_result: forceResult
+      });
+
+      if (error) throw error;
+      
+      alert(`Force result set to ${forceResult || 'None'} successfully`);
+      setIsForceModalOpen(false);
       fetchTrades();
       setSelectedTrade(null);
     } catch (err: any) {
@@ -195,17 +219,25 @@ export default function AdminTrades() {
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="text-sm font-bold text-white">₹{trade.amount}</span>
-                      <span className="text-[10px] text-gray-500">Price: {trade.entry_price}</span>
+                      <span className="text-[10px] text-gray-500">Entry: {trade.entry_price}</span>
+                      {trade.exit_price && (
+                        <span className="text-[10px] text-blue-400">Exit: {trade.exit_price}</span>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${
-                      trade.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-500' :
-                      trade.result === 'LOSS' ? 'bg-rose-500/10 text-rose-500' :
-                      'bg-amber-500/10 text-amber-500'
-                    }`}>
-                      {trade.result}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest text-center ${
+                        trade.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-500' :
+                        trade.result === 'LOSS' ? 'bg-rose-500/10 text-rose-500' :
+                        'bg-amber-500/10 text-amber-500'
+                      }`}>
+                        {trade.result}
+                      </span>
+                      {trade.force_result && (
+                        <span className="text-[8px] text-blue-400 font-bold uppercase text-center">Forced: {trade.force_result}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
@@ -215,15 +247,28 @@ export default function AdminTrades() {
                   </td>
                   <td className="px-6 py-4">
                     {trade.result === 'PENDING' ? (
-                      <button 
-                        onClick={() => {
-                          setSelectedTrade(trade);
-                          setIsSettleModalOpen(true);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-widest transition-colors"
-                      >
-                        Settle
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button 
+                          onClick={() => {
+                            setSelectedTrade(trade);
+                            setSettleResult('WIN');
+                            setIsSettleModalOpen(true);
+                          }}
+                          className="bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-bold px-2 py-1 rounded uppercase tracking-widest transition-colors"
+                        >
+                          Settle Now
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setSelectedTrade(trade);
+                            setForceResult(trade.force_result || 'WIN');
+                            setIsForceModalOpen(true);
+                          }}
+                          className="bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-bold px-2 py-1 rounded uppercase tracking-widest transition-colors border border-white/5"
+                        >
+                          Force Result
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Settled</span>
                     )}
@@ -262,7 +307,7 @@ export default function AdminTrades() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-[#1e222d] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-8 space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">Manual Settlement</h3>
+              <h3 className="text-xl font-bold text-white">Immediate Settlement</h3>
               <button onClick={() => setIsSettleModalOpen(false)} className="text-gray-500 hover:text-white">
                 <XCircle size={24} />
               </button>
@@ -332,6 +377,74 @@ export default function AdminTrades() {
                 }`}
               >
                 {isProcessing ? 'Processing...' : 'Confirm Settle'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Force Result Modal */}
+      {isForceModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#1e222d] w-full max-w-md rounded-2xl border border-white/10 shadow-2xl p-8 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-white">Force Future Result</h3>
+              <button onClick={() => setIsForceModalOpen(false)} className="text-gray-500 hover:text-white">
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-400">
+              Set the result that will be applied when this trade expires.
+            </p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => setForceResult('WIN')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                  forceResult === 'WIN' 
+                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' 
+                    : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                <TrendingUp size={24} />
+                <span className="font-bold">FORCE WIN</span>
+              </button>
+              <button 
+                onClick={() => setForceResult('LOSS')}
+                className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                  forceResult === 'LOSS' 
+                    ? 'bg-rose-500/20 border-rose-500 text-rose-500' 
+                    : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'
+                }`}
+              >
+                <TrendingDown size={24} />
+                <span className="font-bold">FORCE LOSS</span>
+              </button>
+            </div>
+
+            <button 
+              onClick={() => setForceResult(null)}
+              className={`w-full py-2 rounded-lg text-xs font-bold transition-all ${
+                forceResult === null ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              CLEAR FORCE
+            </button>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsForceModalOpen(false)}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSetForceResult}
+                disabled={isProcessing}
+                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-900/20"
+              >
+                {isProcessing ? 'Processing...' : 'Save Force'}
               </button>
             </div>
           </div>
