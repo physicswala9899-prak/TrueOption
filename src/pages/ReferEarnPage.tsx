@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { supabase, UserProfile } from '../lib/supabase';
-import { Copy, Users, Gift, TrendingUp, CheckCircle2, Share2 } from 'lucide-react';
+import { Copy, Users, Gift, TrendingUp, CheckCircle2, Share2, Clock } from 'lucide-react';
 
 export default function ReferEarnPage() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -29,16 +29,17 @@ export default function ReferEarnPage() {
       .eq('id', authUser.id)
       .single();
     
-    setUser(userData);
+    const profile = userData as UserProfile;
+    setUser(profile);
 
-    if (userData) {
+    if (profile) {
       // If user doesn't have a referral code, generate one
-      if (!userData.referral_code) {
+      if (!profile.referral_code) {
         try {
           const { data: newCode, error } = await supabase.rpc('assign_referral_code');
           if (!error && newCode) {
-            userData.referral_code = newCode;
-            setUser({ ...userData });
+            profile.referral_code = newCode;
+            setUser({ ...profile });
           }
         } catch (err) {
           console.error('Failed to assign referral code:', err);
@@ -49,7 +50,7 @@ export default function ReferEarnPage() {
       const { data: refs } = await supabase
         .from('users')
         .select('username, created_at, referral_bonus_received')
-        .eq('referred_by', userData.id)
+        .eq('referred_by', profile.id)
         .order('created_at', { ascending: false });
       
       setReferrals(refs || []);
@@ -58,20 +59,20 @@ export default function ReferEarnPage() {
       const { data: bonusEvents } = await supabase
         .from('referral_bonus_events')
         .select('referrer_bonus_amount')
-        .eq('referrer_id', userData.id);
+        .eq('referrer_id', profile.id);
       
-      const totalBonus = bonusEvents?.reduce((sum, event) => sum + Number(event.referrer_bonus_amount), 0) || 0;
+      const totalBonus = bonusEvents?.reduce((sum, event) => sum + Number((event as any).referrer_bonus_amount), 0) || 0;
 
       // Get total commission earned
       const { data: commissions } = await supabase
         .from('referral_commissions')
         .select('commission_amount')
-        .eq('referrer_id', userData.id);
+        .eq('referrer_id', profile.id);
       
-      const totalCommission = commissions?.reduce((sum, comm) => sum + Number(comm.commission_amount), 0) || 0;
+      const totalCommission = commissions?.reduce((sum, comm) => sum + Number((comm as any).commission_amount), 0) || 0;
 
       setStats({
-        totalReferrals: refs?.filter(r => r.referral_bonus_received).length || 0,
+        totalReferrals: refs?.filter(r => (r as any).referral_bonus_received).length || 0,
         totalBonus,
         totalCommission
       });

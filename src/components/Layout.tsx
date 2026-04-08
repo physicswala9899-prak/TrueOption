@@ -308,9 +308,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <TrendingUp size={20} />
             <span className="text-[10px] font-bold">Trade</span>
           </Link>
-          <Link to="/transactions" className={`flex flex-col items-center gap-1 ${location.pathname === '/transactions' ? 'text-blue-500' : 'text-gray-500'}`}>
-            <History size={20} />
-            <span className="text-[10px] font-bold">Transaction</span>
+          <Link to="/refer" className={`flex flex-col items-center gap-1 ${location.pathname === '/refer' ? 'text-blue-500' : 'text-gray-500'}`}>
+            <Trophy size={20} />
+            <span className="text-[10px] font-bold">Refer</span>
           </Link>
           <Link to="/settings" className={`flex flex-col items-center gap-1 ${location.pathname === '/settings' ? 'text-blue-500' : 'text-gray-500'}`}>
             <User size={20} />

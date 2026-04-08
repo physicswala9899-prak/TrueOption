@@ -11,20 +11,16 @@ export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
-  // src/components/AdminGuard.tsx mein sudhaar
-useEffect(() => {
-  const checkAdmin = async () => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      // Agar user logged in nahi hai, toh error na dikhayein, seedha redirect karein
-      if (!user) {
-        setIsAdmin(false);
-        setLoading(false);
-        return;
-      }
-
-      // Baaki admin check logic...
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (!user) {
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
 
         const { data, error } = await supabase
           .from('users')
@@ -35,17 +31,16 @@ useEffect(() => {
         console.log('Admin check for user:', user.id, 'Data:', data, 'Error:', error);
 
         // Fallback: Check email directly if database check fails or returns false
-        const isAdminEmail = user.email === 'physicswala9899@gmail.com' || data?.email === 'physicswala9899@gmail.com';
+        const isAdminEmail = user.email === 'physicswala9899@gmail.com' || (data && (data as any).email === 'physicswala9899@gmail.com');
 
         if (error) {
           console.error('Admin check error:', error);
-          // If we got an error (e.g. row not found), but the email matches the superadmin, let them in
           if (isAdminEmail) {
             setIsAdmin(true);
           } else {
             setIsAdmin(false);
           }
-        } else if (data?.is_admin === true || isAdminEmail) {
+        } else if ((data && (data as any).is_admin === true) || isAdminEmail) {
           console.log('Admin access granted');
           setIsAdmin(true);
         } else {

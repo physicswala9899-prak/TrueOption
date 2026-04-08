@@ -31,10 +31,10 @@ export default function AdminReferrals() {
       const { data: commData } = await supabase.from('referral_commissions').select('commission_amount');
 
       if (usersData && bonusData && commData) {
-        const totalRefs = usersData.filter(u => u.referred_by !== null).length;
-        const qualifiedRefs = usersData.filter(u => u.referral_bonus_received).length;
-        const totalBonus = bonusData.reduce((sum, b) => sum + Number(b.referrer_bonus_amount) + Number(b.referee_bonus_amount), 0);
-        const totalComm = commData.reduce((sum, c) => sum + Number(c.commission_amount), 0);
+        const totalRefs = (usersData as any[]).filter(u => u.referred_by !== null).length;
+        const qualifiedRefs = (usersData as any[]).filter(u => u.referral_bonus_received).length;
+        const totalBonus = (bonusData as any[]).reduce((sum, b) => sum + Number(b.referrer_bonus_amount) + Number(b.referee_bonus_amount), 0);
+        const totalComm = (commData as any[]).reduce((sum, c) => sum + Number(c.commission_amount), 0);
 
         setStats({
           totalReferrals: totalRefs,
@@ -61,7 +61,7 @@ export default function AdminReferrals() {
 
       // Enhance with referral counts
       if (usersList) {
-        const enhancedUsers = await Promise.all(usersList.map(async (u) => {
+        const enhancedUsers = await Promise.all((usersList as any[]).map(async (u) => {
           const { count: totalCount } = await supabase
             .from('users')
             .select('*', { count: 'exact', head: true })
@@ -78,14 +78,14 @@ export default function AdminReferrals() {
             .select('referrer_bonus_amount')
             .eq('referrer_id', u.id);
           
-          const bonusEarned = bonusEvents?.reduce((sum, e) => sum + Number(e.referrer_bonus_amount), 0) || 0;
+          const bonusEarned = (bonusEvents as any[])?.reduce((sum, e) => sum + Number(e.referrer_bonus_amount), 0) || 0;
 
           const { data: commEvents } = await supabase
             .from('referral_commissions')
             .select('commission_amount')
             .eq('referrer_id', u.id);
             
-          const commEarned = commEvents?.reduce((sum, e) => sum + Number(e.commission_amount), 0) || 0;
+          const commEarned = (commEvents as any[])?.reduce((sum, e) => sum + Number(e.commission_amount), 0) || 0;
 
           return {
             ...u,
